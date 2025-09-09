@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Asistencia</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F8FAFC;
+            color: #1E293B;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            border-bottom: 1px solid #E2E8F0;
+            text-align: center;
+        }
+
+        .sidebar-header h2 {
+            color: #667eea;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 15px 25px;
+            color: #64748B;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #F1F5F9;
+            color: #667eea;
+            border-left-color: #667eea;
+        }
+
+        .nav-item i {
+            width: 20px;
+            margin-right: 12px;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1E293B;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: #EF4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #DC2626;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .stat-icon.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-icon.success { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
+        .stat-icon.warning { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+        .stat-icon.info { background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1E293B;
+        }
+
+        .stat-label {
+            color: #64748B;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .attendance-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1E293B;
+        }
+
+        .attendance-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .attendance-status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .status-present {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+
+        .status-absent {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+
+        .recent-attendance {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .attendance-table th,
+        .attendance-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .attendance-table th {
+            background: #F8FAFC;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-present {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .badge-absent {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748B;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+
+        .alert-error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1E293B;
+        }
+
+        .close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748B;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .badge-pending {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .badge-approved {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .badge-rejected {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        /* Estilos para el calendario de turnos */
+        .calendar-day {
+            background: white;
+            padding: 10px;
+            min-height: 80px;
+            border: 1px solid #E2E8F0;
+            position: relative;
+        }
+
+        .calendar-day.other-month {
+            background: #F8FAFC;
+            color: #9CA3AF;
+        }
+
+        .calendar-day.today {
+            background: #EFF6FF;
+            border-color: #3B82F6;
+        }
+
+        .day-number {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #1E293B;
+        }
+
+        .shift-assignment {
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            color: white;
+            font-weight: 500;
+        }
+
+        .central-transporte-manana {
+            background-color: #4CAF50;
+        }
+
+        .central-transporte-tarde {
+            background-color: #FF9800;
+        }
+
+        .despacho-central-manana {
+            background-color: #2196F3;
+        }
+
+        .despacho-central-tarde {
+            background-color: #9C27B0;
+        }
+
+        .turno-noche {
+            background-color: #607D8B;
+        }
+
+        .shift-assignment.holiday {
+            background-color: #FF0000;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .free-day {
+            background-color: #F3F4F6;
+            color: #9CA3AF;
+            font-style: italic;
+        }
+
+        .free-day .day-number {
+            color: #9CA3AF;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .attendance-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-clock"></i> Asistencia</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-section="dashboard">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="#" class="nav-item" data-section="attendance">
+                <i class="fas fa-calendar-check"></i> Mi Asistencia
+            </a>
+        <a href="#" class="nav-item" data-section="shifts">
+            <i class="fas fa-clock"></i> Mis Turnos
+        </a>
+        <a href="#" class="nav-item" data-section="profile">
+            <i class="fas fa-user"></i> Mi Perfil
+        </a>
+        <a href="#" class="nav-item" data-section="liquidaciones">
+            <i class="fas fa-file-invoice-dollar"></i> Mis Liquidaciones
+        </a>
+            <a href="#" class="nav-item" data-section="vacations">
+                <i class="fas fa-plane"></i> Vacaciones
+            </a>
+            </a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <header class="header">
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <span id="userName">Usuario</span>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="alert alert-success" id="successAlert"></div>
+            <div class="alert alert-error" id="errorAlert"></div>
+
+            <!-- Dashboard Section -->
+            <div id="dashboardSection">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon primary">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="totalDays">0</div>
+                        <div class="stat-label">Días Trabajados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon success">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="totalHours">0h</div>
+                        <div class="stat-label">Horas Totales</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon warning">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="attendanceRate">0%</div>
+                        <div class="stat-label">Asistencia</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon info">
+                                <i class="fas fa-plane"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value" id="vacationDays">0</div>
+                        <div class="stat-label">Días de Vacaciones</div>
+                    </div>
+                </div>
+
+                <div class="attendance-section">
+                    <h2 class="section-title">Registro de Asistencia</h2>
+                    <div id="attendanceStatus" class="attendance-status"></div>
+                    <div class="attendance-buttons">
+                        <button class="btn btn-primary" id="checkInBtn" onclick="checkIn()">
+                            <i class="fas fa-sign-in-alt"></i> Registrar Entrada
+                        </button>
+                        <button class="btn btn-success" id="checkOutBtn" onclick="checkOut()" disabled>
+                            <i class="fas fa-sign-out-alt"></i> Registrar Salida
+                        </button>
+                    </div>
+                </div>
+
+                <div class="recent-attendance">
+                    <h2 class="section-title">Asistencia Reciente</h2>
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Horas</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Other sections will be added here -->
+            <div id="attendanceSection" style="display: none;">
+                <h2>Mi Asistencia</h2>
+                <p>Sección de asistencia detallada...</p>
+            </div>
+
+            <!-- Mis Turnos Section -->
+            <div id="shiftsSection" style="display: none;">
+                <div class="attendance-section">
+                    <h2 class="section-title">Mis Turnos Asignados</h2>
+                    
+                    <!-- Calendario de turnos -->
+                    <div class="calendar-container" style="margin-bottom: 30px;">
+                        <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <button class="btn" onclick="previousMonth()" style="background: #6B7280; color: white;">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </button>
+                            <h3 id="currentMonth" style="margin: 0; color: #1E293B;"></h3>
+                            <button class="btn" onclick="nextMonth()" style="background: #6B7280; color: white;">
+                                Siguiente <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #E2E8F0; border-radius: 8px; overflow: hidden;">
+                            <div class="calendar-header" style="background: #F8FAFC; padding: 10px; text-align: center; font-weight: 600; color: #475569;">Lun</div>
+                            <div class="calendar-header" style="background: #F8FAFC; padding: 10px; text-align: center; font-weight: 600; color: #475569;">Mar</div>
+                            <div class="calendar-header" style="background: #F8FAFC; padding: 10px; text-align: center; font-weight: 600; color: #475569;">Mié</div>
+                            <div class="calendar-header" style="background: #F8FAFC; padding: 10px; text-align: center; font-weight: 600; color: #475569;">Jue</div>
+                            <div class="calendar-header" style="background: #F8FAFC; padding: 10px; text-align: center; font-weight: 600; color: #475569;">Vie</div>
+                            <div class="calendar-header" style="background: #F8FAFC; padding: 10px; text-align: center; font-weight: 600; color: #475569;">Sáb</div>
+                            <div class="calendar-header" style="background: #F8FAFC; padding: 10px; text-align: center; font-weight: 600; color: #475569;">Dom</div>
+                            <div id="calendarGrid" style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;">
+                                <!-- El calendario se generará dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resumen de turnos -->
+                    <div class="table-container">
+                        <h3>Resumen de Mis Turnos</h3>
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Semana</th>
+                                    <th>Turno</th>
+                                    <th>Horario</th>
+                                    <th>Días</th>
+                                    <th>Horas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shiftsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Perfil -->
+            <div id="profileSection" style="display: none;">
+                <div class="attendance-section">
+                    <h2 class="section-title">Mi Perfil</h2>
+                    
+                    <div class="profile-container" style="display: flex; gap: 30px; align-items: flex-start;">
+                        <!-- Foto de perfil -->
+                        <div class="profile-photo-section" style="flex: 0 0 200px;">
+                            <div class="profile-photo-container" style="text-align: center;">
+                                <div class="profile-photo" id="profilePhoto" style="width: 150px; height: 150px; border-radius: 50%; background: #E2E8F0; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 3px solid #CBD5E1; overflow: hidden;">
+                                    <i class="fas fa-user" style="font-size: 60px; color: #94A3B8;"></i>
+                                </div>
+                                <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                                <button class="btn" onclick="document.getElementById('photoInput').click()" style="background: #3B82F6; color: white; margin-bottom: 10px;">
+                                    <i class="fas fa-camera"></i> Cambiar Foto
+                                </button>
+                                <button class="btn" onclick="removeProfilePhoto()" style="background: #EF4444; color: white; display: none;" id="removePhotoBtn">
+                                    <i class="fas fa-trash"></i> Eliminar Foto
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Información del perfil -->
+                        <div class="profile-info" style="flex: 1;">
+                            <div class="info-card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <h3 style="margin-top: 0; color: #1E293B;">Información Personal</h3>
+                                <div class="info-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div class="info-item">
+                                        <label style="font-weight: 600; color: #475569;">Nombre:</label>
+                                        <p id="profileName" style="margin: 5px 0; color: #1E293B;"></p>
+                                    </div>
+                                    <div class="info-item">
+                                        <label style="font-weight: 600; color: #475569;">Apellido:</label>
+                                        <p id="profileLastName" style="margin: 5px 0; color: #1E293B;"></p>
+                                    </div>
+                                    <div class="info-item">
+                                        <label style="font-weight: 600; color: #475569;">Email:</label>
+                                        <p id="profileEmail" style="margin: 5px 0; color: #1E293B;"></p>
+                                    </div>
+                                    <div class="info-item">
+                                        <label style="font-weight: 600; color: #475569;">Teléfono:</label>
+                                        <p id="profilePhone" style="margin: 5px 0; color: #1E293B;"></p>
+                                    </div>
+                                    <div class="info-item">
+                                        <label style="font-weight: 600; color: #475569;">Rol:</label>
+                                        <p id="profileRole" style="margin: 5px 0; color: #1E293B;"></p>
+                                    </div>
+                                    <div class="info-item">
+                                        <label style="font-weight: 600; color: #475569;">Fecha de Contratación:</label>
+                                        <p id="profileHireDate" style="margin: 5px 0; color: #1E293B;"></p>
+                                    </div>
+                                    <div class="info-item">
+                                        <label style="font-weight: 600; color: #475569;">Tiempo de Colación:</label>
+                                        <p id="profileBreakTime" style="margin: 5px 0; color: #1E293B;"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Liquidaciones -->
+            <div id="liquidacionesSection" style="display: none;">
+                <div class="attendance-section">
+                    <h2 class="section-title">Mis Liquidaciones de Sueldo</h2>
+                    
+                    <!-- Filtros -->
+                    <div class="filters" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <div class="form-group" style="margin: 0;">
+                            <label>Año:</label>
+                            <select id="employeePayrollYearFilter" onchange="filterEmployeePayrolls()">
+                                <option value="">Todos los años</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label>Mes:</label>
+                            <select id="employeePayrollMonthFilter" onchange="filterEmployeePayrolls()">
+                                <option value="">Todos los meses</option>
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de liquidaciones -->
+                    <div class="table-container">
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Período</th>
+                                    <th>Archivo</th>
+                                    <th>Tamaño</th>
+                                    <th>Fecha de Subida</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeePayrollsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="vacationsSection" style="display: none;">
+                <div class="attendance-section">
+                    <h2 class="section-title">
+                        Mis Vacaciones
+                        <button class="btn btn-primary" onclick="showRequestVacationModal()">
+                            <i class="fas fa-plus"></i> Solicitar Vacaciones
+                        </button>
+                    </h2>
+                    
+                    <div class="table-container">
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha Inicio</th>
+                                    <th>Fecha Fin</th>
+                                    <th>Días</th>
+                                    <th>Estado</th>
+                                    <th>Motivo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vacationsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="profileSection" style="display: none;">
+                <h2>Mi Perfil</h2>
+                <p>Sección de perfil...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para solicitar vacaciones -->
+    <div id="requestVacationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Solicitar Vacaciones</h3>
+                <span class="close" onclick="closeModal('requestVacationModal')">&times;</span>
+            </div>
+            <form id="requestVacationForm">
+                <div class="form-group">
+                    <label for="vacationStartDate">Fecha de Inicio</label>
+                    <input type="date" id="vacationStartDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="vacationEndDate">Fecha de Fin</label>
+                    <input type="date" id="vacationEndDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="vacationReason">Motivo</label>
+                    <textarea id="vacationReason" class="form-control" rows="3" placeholder="Describe el motivo de tu solicitud de vacaciones..."></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeModal('requestVacationModal')" style="background: #6B7280; color: white;">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Solicitar Vacaciones</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let todayAttendance = null;
+        let currentDate = new Date(2025, 8, 1); // Septiembre 2025
+        let employeeShifts = [];
+
+        // Inicializar aplicación
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadUserData();
+            await loadDashboardData();
+            setupEventListeners();
+        });
+
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/verify', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/';
+                    return;
+                }
+
+                const data = await response.json();
+                currentUser = data.user;
+            } catch (error) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/';
+            }
+        }
+
+        async function loadUserData() {
+            if (currentUser) {
+                document.getElementById('userName').textContent = `${currentUser.nombre} ${currentUser.apellido}`;
+                document.getElementById('userAvatar').textContent = currentUser.nombre.charAt(0);
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Cargar estadísticas de asistencia
+                const response = await fetch('/api/asistencia/mi-asistencia?limite=30', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStats(data.estadisticas);
+                    updateAttendanceTable(data.data);
+                    checkTodayAttendance(data.data);
+                }
+            } catch (error) {
+                showError('Error al cargar datos del dashboard');
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalDays').textContent = stats.diasPresentes;
+            document.getElementById('totalHours').textContent = `${stats.totalHoras}h`;
+            document.getElementById('attendanceRate').textContent = `${stats.porcentajeAsistencia}%`;
+        }
+
+        function updateAttendanceTable(attendance) {
+            const tbody = document.getElementById('attendanceTableBody');
+            tbody.innerHTML = '';
+
+            attendance.slice(0, 10).forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDate(record.fecha)}</td>
+                    <td>${record.hora_entrada || '-'}</td>
+                    <td>${record.hora_salida || '-'}</td>
+                    <td>${record.horas_trabajadas ? `${record.horas_trabajadas}h` : '-'}</td>
+                    <td><span class="status-badge ${record.estado === 'presente' ? 'badge-present' : 'badge-absent'}">${record.estado}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function checkTodayAttendance(attendance) {
+            const today = new Date().toISOString().split('T')[0];
+            todayAttendance = attendance.find(record => record.fecha === today);
+
+            const statusDiv = document.getElementById('attendanceStatus');
+            const checkInBtn = document.getElementById('checkInBtn');
+            const checkOutBtn = document.getElementById('checkOutBtn');
+
+            if (todayAttendance) {
+                if (todayAttendance.hora_salida) {
+                    statusDiv.innerHTML = `
+                        <i class="fas fa-check-circle"></i> 
+                        Ya completaste tu jornada de hoy. Entrada: ${todayAttendance.hora_entrada}, Salida: ${todayAttendance.hora_salida}
+                    `;
+                    statusDiv.className = 'attendance-status status-present';
+                    checkInBtn.disabled = true;
+                    checkOutBtn.disabled = true;
+                } else {
+                    statusDiv.innerHTML = `
+                        <i class="fas fa-clock"></i> 
+                        Entrada registrada a las ${todayAttendance.hora_entrada}. Puedes registrar tu salida.
+                    `;
+                    statusDiv.className = 'attendance-status status-present';
+                    checkInBtn.disabled = true;
+                    checkOutBtn.disabled = false;
+                }
+            } else {
+                statusDiv.innerHTML = `
+                    <i class="fas fa-exclamation-circle"></i> 
+                    No has registrado tu entrada hoy.
+                `;
+                statusDiv.className = 'attendance-status status-absent';
+                checkInBtn.disabled = false;
+                checkOutBtn.disabled = true;
+            }
+        }
+
+        async function checkIn() {
+            try {
+                const response = await fetch('/api/asistencia/entrada', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        observaciones: '',
+                        ubicacion: 'Oficina'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Entrada registrada exitosamente');
+                    await loadDashboardData();
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Error al registrar entrada');
+            }
+        }
+
+        async function checkOut() {
+            try {
+                const response = await fetch('/api/asistencia/salida', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        observaciones: ''
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Salida registrada exitosamente');
+                    await loadDashboardData();
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Error al registrar salida');
+            }
+        }
+
+        function setupEventListeners() {
+            // Navegación del sidebar
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const section = item.dataset.section;
+                    showSection(section);
+                    
+                    // Actualizar clase activa
+                    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                });
+            });
+
+            // Menú móvil
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('open');
+            });
+
+            // Formulario de vacaciones
+            document.getElementById('requestVacationForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await requestVacation();
+            });
+        }
+
+        function showSection(section) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('[id$="Section"]').forEach(sec => {
+                sec.style.display = 'none';
+            });
+
+            // Mostrar sección seleccionada
+            document.getElementById(section + 'Section').style.display = 'block';
+            document.getElementById('pageTitle').textContent = getSectionTitle(section);
+
+            // Cargar datos específicos de la sección
+            if (section === 'vacations') {
+                loadVacations();
+            } else if (section === 'shifts') {
+                loadEmployeeShifts();
+            } else if (section === 'profile') {
+                loadProfileData();
+            } else if (section === 'liquidaciones') {
+                loadEmployeePayrolls();
+            }
+        }
+
+        function getSectionTitle(section) {
+            const titles = {
+                dashboard: 'Dashboard',
+                attendance: 'Mi Asistencia',
+                shifts: 'Mis Turnos',
+                vacations: 'Vacaciones',
+                profile: 'Mi Perfil',
+                liquidaciones: 'Mis Liquidaciones'
+            };
+            return titles[section] || 'Dashboard';
+        }
+
+        function showSuccess(message) {
+            const alert = document.getElementById('successAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 5000);
+        }
+
+        function showError(message) {
+            const alert = document.getElementById('errorAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 5000);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        // Funciones para vacaciones
+        async function loadVacations() {
+            try {
+                const response = await fetch('/api/vacaciones/mis-vacaciones', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateVacationsTable(data.data);
+                }
+            } catch (error) {
+                showError('Error al cargar vacaciones');
+            }
+        }
+
+        function updateVacationsTable(vacations) {
+            const tbody = document.getElementById('vacationsTableBody');
+            tbody.innerHTML = '';
+
+            vacations.forEach(vacation => {
+                const row = document.createElement('tr');
+                const statusClass = vacation.estado === 'aprobado' ? 'badge-approved' : 
+                                  vacation.estado === 'rechazado' ? 'badge-rejected' : 'badge-pending';
+
+                row.innerHTML = `
+                    <td>${formatDate(vacation.fecha_inicio)}</td>
+                    <td>${formatDate(vacation.fecha_fin)}</td>
+                    <td>${vacation.dias_solicitados}</td>
+                    <td><span class="status-badge ${statusClass}">${vacation.estado}</span></td>
+                    <td>${vacation.motivo || '-'}</td>
+                    <td>
+                        ${vacation.estado === 'pendiente' ? `
+                            <button class="btn btn-danger" onclick="cancelVacation(${vacation.id})" style="padding: 5px 10px; font-size: 12px;">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        ` : ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function showRequestVacationModal() {
+            document.getElementById('requestVacationModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        async function requestVacation() {
+            const formData = {
+                fecha_inicio: document.getElementById('vacationStartDate').value,
+                fecha_fin: document.getElementById('vacationEndDate').value,
+                motivo: document.getElementById('vacationReason').value
+            };
+
+            // Calcular días solicitados
+            const startDate = new Date(formData.fecha_inicio);
+            const endDate = new Date(formData.fecha_fin);
+            const timeDiff = endDate.getTime() - startDate.getTime();
+            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+
+            if (daysDiff <= 0) {
+                showError('La fecha de fin debe ser posterior a la fecha de inicio');
+                return;
+            }
+
+            formData.dias_solicitados = daysDiff;
+
+            try {
+                const response = await fetch('/api/vacaciones', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Solicitud de vacaciones enviada exitosamente');
+                    closeModal('requestVacationModal');
+                    document.getElementById('requestVacationForm').reset();
+                    loadVacations();
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Error al enviar solicitud de vacaciones');
+            }
+        }
+
+        async function cancelVacation(vacationId) {
+            if (confirm('¿Estás seguro de que quieres cancelar esta solicitud de vacaciones?')) {
+                try {
+                    const response = await fetch(`/api/vacaciones/${vacationId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showSuccess('Solicitud de vacaciones cancelada');
+                        loadVacations();
+                    } else {
+                        showError(data.message);
+                    }
+                } catch (error) {
+                    showError('Error al cancelar solicitud');
+                }
+            }
+        }
+
+        // Funciones para manejar turnos del empleado
+        async function loadEmployeeShifts() {
+            try {
+                // Generar turnos del empleado basado en su ID
+                generateEmployeeShifts();
+                generateCalendar();
+                generateShiftsSummary();
+            } catch (error) {
+                showError('Error al cargar turnos del empleado');
+            }
+        }
+
+        function generateEmployeeShifts() {
+            if (!currentUser) return;
+            
+            const employeeId = currentUser.id;
+            console.log('Generando turnos para empleado ID:', employeeId, 'Nombre:', currentUser.nombre, currentUser.apellido);
+            const startDate = new Date();
+            employeeShifts = [];
+            
+            // Generar turnos para 12 semanas
+            for (let week = 0; week < 12; week++) {
+                const weekStart = new Date(startDate);
+                weekStart.setDate(startDate.getDate() + (week * 7));
+                
+                // Determinar qué turno tiene este empleado esta semana
+                let shiftInfo = null;
+                
+                // Sistema de rotación: Turno Noche -> Despacho Tarde -> Central Transporte Mañana -> Despacho Mañana -> Central Transporte Tarde -> Turno Noche
+                const rotationWeek = week % 5; // Rotación cada 5 semanas
+                
+                if (employeeId === 8) { // IVAN VIDAL
+                    shiftInfo = getShiftForRotation(rotationWeek, weekStart, 'IVAN VIDAL');
+                } else if (employeeId === 9) { // JOSE PAILLACAR
+                    shiftInfo = getShiftForRotation((rotationWeek + 1) % 5, weekStart, 'JOSE PAILLACAR');
+                } else if (employeeId === 10) { // MARCOS PAILLACAR
+                    shiftInfo = getShiftForRotation((rotationWeek + 2) % 5, weekStart, 'MARCOS PAILLACAR');
+                } else if (employeeId === 11) { // MATIAS VILLANUEVA
+                    shiftInfo = getShiftForRotation((rotationWeek + 3) % 5, weekStart, 'MATIAS VILLANUEVA');
+                } else if (employeeId === 12) { // ANGELICA CHAVEZ
+                    shiftInfo = getShiftForRotation((rotationWeek + 4) % 5, weekStart, 'ANGELICA CHAVEZ');
+                } else if (employeeId === 13) { // MATIAS IGOR
+                    shiftInfo = getShiftForRotation((rotationWeek + 5) % 5, weekStart, 'MATIAS IGOR');
+                }
+                
+                if (shiftInfo) {
+                    shiftInfo.week = week + 1; // Ajustar número de semana
+                    console.log('Semana', week + 1, 'Turno asignado:', shiftInfo.shift);
+                    employeeShifts.push(shiftInfo);
+                }
+            }
+        }
+
+        function getShiftForRotation(rotationIndex, weekStart, employeeName) {
+            // Rotación: 0=Turno Noche, 1=Despacho Tarde, 2=Central Transporte Mañana, 3=Despacho Mañana, 4=Central Transporte Tarde
+            let shiftInfo = null;
+            
+            switch (rotationIndex) {
+                case 0: // Turno Noche (Dom 23:30 - Sáb 07:00)
+                    const hoursInfoNoche = calculateWeeklyHours('noche', 0);
+                    shiftInfo = {
+                        week: 1, // Se ajustará en el bucle
+                        weekStart: weekStart.toISOString().split('T')[0],
+                        shift: `Turno Noche`,
+                        class: 'turno-noche',
+                        days: `Domingo a Sábado (${hoursInfoNoche.workingDays} días trabajo, ${hoursInfoNoche.freeDays} día libre) - ${hoursInfoNoche.hoursPerDay} hrs/día`,
+                        hours: `${hoursInfoNoche.totalHours} hrs`,
+                        workingDays: hoursInfoNoche.workingDays,
+                        freeDays: hoursInfoNoche.freeDays
+                    };
+                    break;
+                    
+                case 1: // Despacho Tarde (Lun 15:00 - Sáb 23:00)
+                    const hoursInfoDespachoTarde = calculateWeeklyHours('despacho', 1);
+                    shiftInfo = {
+                        week: 1,
+                        weekStart: weekStart.toISOString().split('T')[0],
+                        shift: `Despacho Central - Tarde`,
+                        class: 'despacho-central-tarde',
+                        days: `Lunes a Sábado (${hoursInfoDespachoTarde.workingDays} días trabajo, ${hoursInfoDespachoTarde.freeDays} día libre) - ${hoursInfoDespachoTarde.hoursPerDay} hrs/día`,
+                        hours: `${hoursInfoDespachoTarde.totalHours} hrs`,
+                        workingDays: hoursInfoDespachoTarde.workingDays,
+                        freeDays: hoursInfoDespachoTarde.freeDays
+                    };
+                    break;
+                    
+                case 2: // Central Transporte Mañana (Lun 07:00 - Dom 16:00)
+                    const hoursInfoCentralManana = calculateWeeklyHours('central', 0);
+                    shiftInfo = {
+                        week: 1,
+                        weekStart: weekStart.toISOString().split('T')[0],
+                        shift: `Central de Transporte - Mañana`,
+                        class: 'central-transporte-manana',
+                        days: `Lunes a Domingo (${hoursInfoCentralManana.workingDays} días trabajo, ${hoursInfoCentralManana.freeDays} días libres) - ${hoursInfoCentralManana.hoursPerDay} hrs/día`,
+                        hours: `${hoursInfoCentralManana.totalHours} hrs`,
+                        workingDays: hoursInfoCentralManana.workingDays,
+                        freeDays: hoursInfoCentralManana.freeDays
+                    };
+                    break;
+                    
+                case 3: // Despacho Mañana (Lun 07:00 - Sáb 15:00)
+                    const hoursInfoDespachoManana = calculateWeeklyHours('despacho', 0);
+                    shiftInfo = {
+                        week: 1,
+                        weekStart: weekStart.toISOString().split('T')[0],
+                        shift: `Despacho Central - Mañana`,
+                        class: 'despacho-central-manana',
+                        days: `Lunes a Sábado (${hoursInfoDespachoManana.workingDays} días trabajo, ${hoursInfoDespachoManana.freeDays} día libre) - ${hoursInfoDespachoManana.hoursPerDay} hrs/día`,
+                        hours: `${hoursInfoDespachoManana.totalHours} hrs`,
+                        workingDays: hoursInfoDespachoManana.workingDays,
+                        freeDays: hoursInfoDespachoManana.freeDays
+                    };
+                    break;
+                    
+                case 4: // Central Transporte Tarde (Lun 16:00 - Dom 23:30)
+                    const hoursInfoCentralTarde = calculateWeeklyHours('central', 1);
+                    shiftInfo = {
+                        week: 1,
+                        weekStart: weekStart.toISOString().split('T')[0],
+                        shift: `Central de Transporte - Tarde`,
+                        class: 'central-transporte-tarde',
+                        days: `Lunes a Domingo (${hoursInfoCentralTarde.workingDays} días trabajo, ${hoursInfoCentralTarde.freeDays} días libres) - ${hoursInfoCentralTarde.hoursPerDay} hrs/día`,
+                        hours: `${hoursInfoCentralTarde.totalHours} hrs`,
+                        workingDays: hoursInfoCentralTarde.workingDays,
+                        freeDays: hoursInfoCentralTarde.freeDays
+                    };
+                    break;
+            }
+            
+            return shiftInfo;
+        }
+
+        function getCentralTransporteShift(index) {
+            const shifts = [
+                { name: 'Central Transporte - Mañana', class: 'central-transporte-manana' },
+                { name: 'Central Transporte - Tarde', class: 'central-transporte-tarde' }
+            ];
+            return shifts[index];
+        }
+
+        function getDespachoCentralShift(index) {
+            const shifts = [
+                { name: 'Despacho Central - Mañana', class: 'despacho-central-manana' },
+                { name: 'Despacho Central - Tarde', class: 'despacho-central-tarde' }
+            ];
+            return shifts[index];
+        }
+
+        function getTurnoNocheShift(index) {
+            const empleadosNoche = [
+                'IVAN VIDAL',
+                'JOSE PAILLACAR', 
+                'MARCOS PAILLACAR',
+                'MATIAS VILLANUEVA',
+                'ANGELICA CHAVEZ',
+                'MATIAS IGOR'
+            ];
+            
+            const empleado = empleadosNoche[index];
+            return {
+                name: `Turno Noche - ${empleado}`,
+                class: 'turno-noche'
+            };
+        }
+
+        function calculateWeeklyHours(shiftType, shiftIndex) {
+            // Objetivo: 44 horas semanales exactas
+            const targetHours = 44;
+            
+            let shiftHours = 0;
+            let shiftName = '';
+            let workingDays = 0;
+            let freeDays = 0;
+            
+            if (shiftType === 'central') {
+                if (shiftIndex === 0) { // Mañana (Lun 07:00 - Dom 16:00)
+                    shiftHours = 6.29; // 44 ÷ 7 días = 6.29 horas por día
+                    shiftName = 'Mañana';
+                    workingDays = 7; // Lunes a Domingo
+                    freeDays = 0; // Sin días libres
+                } else { // Tarde (Lun 16:00 - Dom 23:30)
+                    shiftHours = 6.29; // 44 ÷ 7 días = 6.29 horas por día
+                    shiftName = 'Tarde';
+                    workingDays = 7; // Lunes a Domingo
+                    freeDays = 0; // Sin días libres
+                }
+            } else if (shiftType === 'despacho') {
+                if (shiftIndex === 0) { // Mañana (Lun 07:00 - Sáb 15:00)
+                    shiftHours = 7.33; // 44 ÷ 6 días = 7.33 horas por día
+                    shiftName = 'Mañana';
+                    workingDays = 6; // Lunes a Sábado
+                    freeDays = 1; // Domingo libre
+                } else { // Tarde (Lun 15:00 - Sáb 23:00)
+                    shiftHours = 7.33; // 44 ÷ 6 días = 7.33 horas por día
+                    shiftName = 'Tarde';
+                    workingDays = 6; // Lunes a Sábado
+                    freeDays = 1; // Domingo libre
+                }
+            } else if (shiftType === 'noche') {
+                // Turno Noche (Dom 23:30 - Sáb 07:00)
+                shiftHours = 7.33; // 44 ÷ 6 días = 7.33 horas por día
+                shiftName = 'Noche';
+                workingDays = 6; // Domingo a Sábado
+                freeDays = 1; // Domingo libre (después del turno)
+            }
+            
+            const actualTotalHours = workingDays * shiftHours;
+            
+            return {
+                totalHours: Math.round(actualTotalHours * 100) / 100, // Redondear a 2 decimales
+                workingDays: workingDays,
+                freeDays: freeDays,
+                hoursPerDay: Math.round(shiftHours * 100) / 100,
+                shiftName: shiftName
+            };
+        }
+
+        function generateCalendar() {
+            const calendarGrid = document.getElementById('calendarGrid');
+            const currentMonthElement = document.getElementById('currentMonth');
+            
+            if (!calendarGrid || !currentMonthElement) return;
+            
+            // Limpiar calendario
+            calendarGrid.innerHTML = '';
+            
+            // Mostrar mes actual
+            const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                              'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            currentMonthElement.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+            
+            // Obtener primer día del mes y número de días
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+            
+            // Ajustar para que lunes sea 0
+            const adjustedStartingDay = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
+            
+            // Agregar días del mes anterior
+            const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 0);
+            for (let i = adjustedStartingDay - 1; i >= 0; i--) {
+                const dayElement = createDayElement(prevMonth.getDate() - i, true);
+                calendarGrid.appendChild(dayElement);
+            }
+            
+            // Agregar días del mes actual
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = createDayElement(day, false);
+                calendarGrid.appendChild(dayElement);
+            }
+            
+            // Agregar días del mes siguiente para completar la cuadrícula
+            const totalCells = calendarGrid.children.length;
+            const remainingCells = 42 - totalCells; // 6 semanas * 7 días
+            for (let day = 1; day <= remainingCells; day++) {
+                const dayElement = createDayElement(day, true);
+                calendarGrid.appendChild(dayElement);
+            }
+        }
+
+        function createDayElement(day, isOtherMonth) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            
+            if (isOtherMonth) {
+                dayElement.classList.add('other-month');
+            }
+            
+            // Verificar si es hoy
+            const today = new Date();
+            if (!isOtherMonth && 
+                day === today.getDate() && 
+                currentDate.getMonth() === today.getMonth() && 
+                currentDate.getFullYear() === today.getFullYear()) {
+                dayElement.classList.add('today');
+            }
+            
+            const shiftContent = getShiftForDay(day, isOtherMonth);
+            const isFreeDay = !isOtherMonth && !shiftContent && currentUser;
+            
+            if (isFreeDay) {
+                dayElement.classList.add('free-day');
+            }
+            
+            const freeDayText = isFreeDay ? getFreeDayDescription(day, currentUser.id) : '';
+            
+            dayElement.innerHTML = `
+                <div class="day-number">${day}</div>
+                ${shiftContent || (isFreeDay ? `<div style="font-size: 10px; color: #9CA3AF;">${freeDayText}</div>` : '')}
+            `;
+            
+            return dayElement;
+        }
+
+        function getShiftForDay(day, isOtherMonth) {
+            if (isOtherMonth || !currentUser) return '';
+            
+            const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+            const dayOfWeek = date.getDay();
+            const weekNumber = getWeekNumber(date);
+            
+            // Verificar si es día feriado primero
+            if (isHoliday(day, currentDate.getMonth(), currentDate.getFullYear())) {
+                return `<div class="shift-assignment holiday">FERIADO</div>`;
+            }
+            
+            // Determinar si este empleado trabaja este día
+            let shiftInfo = null;
+            
+            // Sistema de rotación: Turno Noche -> Despacho Tarde -> Central Transporte Mañana -> Despacho Mañana -> Central Transporte Tarde -> Turno Noche
+            const rotationWeek = weekNumber % 5; // Rotación cada 5 semanas
+            let rotationIndex = 0;
+            
+            if (currentUser.id === 8) { // IVAN VIDAL
+                rotationIndex = rotationWeek;
+            } else if (currentUser.id === 9) { // JOSE PAILLACAR
+                rotationIndex = (rotationWeek + 1) % 5;
+            } else if (currentUser.id === 10) { // MARCOS PAILLACAR
+                rotationIndex = (rotationWeek + 2) % 5;
+            } else if (currentUser.id === 11) { // MATIAS VILLANUEVA
+                rotationIndex = (rotationWeek + 3) % 5;
+            } else if (currentUser.id === 12) { // ANGELICA CHAVEZ
+                rotationIndex = (rotationWeek + 4) % 5;
+            } else if (currentUser.id === 13) { // MATIAS IGOR
+                rotationIndex = (rotationWeek + 5) % 5;
+            }
+            
+            // Determinar el turno y verificar si trabaja este día
+            let shiftType = '';
+            let shiftIndex = 0;
+            
+            switch (rotationIndex) {
+                case 0: // Turno Noche
+                    shiftType = 'noche';
+                    shiftIndex = 0;
+                    break;
+                case 1: // Despacho Tarde
+                    shiftType = 'despacho';
+                    shiftIndex = 1;
+                    break;
+                case 2: // Central Transporte Mañana
+                    shiftType = 'central';
+                    shiftIndex = 0;
+                    break;
+                case 3: // Despacho Mañana
+                    shiftType = 'despacho';
+                    shiftIndex = 0;
+                    break;
+                case 4: // Central Transporte Tarde
+                    shiftType = 'central';
+                    shiftIndex = 1;
+                    break;
+            }
+            
+            const hoursInfo = calculateWeeklyHours(shiftType, shiftIndex);
+            if (isWorkingDay(dayOfWeek, hoursInfo.workingDays, currentUser.id, shiftType)) {
+                // Obtener información del turno
+                let shiftName = '';
+                let shiftClass = '';
+                
+                // Obtener el nombre del empleado actual
+                const employeeName = currentUser.nombre + ' ' + currentUser.apellido;
+                console.log('Empleado actual:', currentUser);
+                console.log('Nombre del empleado:', employeeName);
+                
+                switch (rotationIndex) {
+                    case 0: // Turno Noche
+                        shiftName = `Turno Noche`;
+                        shiftClass = 'turno-noche';
+                        break;
+                    case 1: // Despacho Tarde
+                        shiftName = `Despacho Central - Tarde`;
+                        shiftClass = 'despacho-central-tarde';
+                        break;
+                    case 2: // Central Transporte Mañana
+                        shiftName = `Central Transporte - Mañana`;
+                        shiftClass = 'central-transporte-manana';
+                        break;
+                    case 3: // Despacho Mañana
+                        shiftName = `Despacho Central - Mañana`;
+                        shiftClass = 'despacho-central-manana';
+                        break;
+                    case 4: // Central Transporte Tarde
+                        shiftName = `Central Transporte - Tarde`;
+                        shiftClass = 'central-transporte-tarde';
+                        break;
+                }
+                
+                shiftInfo = {
+                    name: shiftName,
+                    class: shiftClass
+                };
+            }
+            
+            if (shiftInfo) {
+                return `<div class="shift-assignment ${shiftInfo.class}">${shiftInfo.name}</div>`;
+            }
+            
+            return '';
+        }
+
+        function getWeekNumber(date) {
+            const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+            const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+            return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        }
+
+        function isWorkingDay(dayOfWeek, workingDays, employeeId, shiftType) {
+            // dayOfWeek: 0=Domingo, 1=Lunes, 2=Martes, ..., 6=Sábado
+            // workingDays: número de días que trabaja por semana
+            // employeeId: para generar días libres consistentes pero aleatorios
+            // shiftType: tipo de turno para determinar días específicos
+            
+            if (shiftType === 'central') {
+                // Central de Transporte: Lunes a Domingo (7 días)
+                return true; // Siempre trabaja
+            } else if (shiftType === 'despacho') {
+                // Despacho Central: Lunes a Sábado (6 días)
+                return dayOfWeek >= 1 && dayOfWeek <= 6; // Lunes a Sábado
+            } else if (shiftType === 'noche') {
+                // Turno Noche: Domingo a Sábado (6 días)
+                return dayOfWeek === 0 || (dayOfWeek >= 1 && dayOfWeek <= 6); // Domingo a Sábado
+            }
+            
+            return false;
+        }
+
+        function getEmployeeFreeDays(employeeId, workingDays) {
+            // Generar días libres consecutivos (seguidos) para cada empleado
+            // Usar el ID del empleado como semilla para consistencia
+            
+            const freeDaysCount = 7 - workingDays;
+            
+            // Crear una función de hash simple basada en el ID del empleado
+            const seed = employeeId * 7; // Multiplicar por 7 para variación
+            
+            // Generar el día de inicio de los días libres consecutivos
+            // Posibles días de inicio: 0-5 (para 2 días consecutivos)
+            const possibleStartDays = [0, 1, 2, 3, 4, 5]; // Domingo a Viernes
+            const startDayIndex = seed % possibleStartDays.length;
+            const startDay = possibleStartDays[startDayIndex];
+            
+            // Generar días libres consecutivos
+            const freeDays = [];
+            for (let i = 0; i < freeDaysCount; i++) {
+                freeDays.push((startDay + i) % 7);
+            }
+            
+            return freeDays.sort((a, b) => a - b);
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            generateCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            generateCalendar();
+        }
+
+        function generateShiftsSummary() {
+            const tbody = document.getElementById('shiftsTableBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            employeeShifts.slice(0, 8).forEach(shift => {
+                const freeDaysText = getFreeDaysText(currentUser.id, shift.freeDays);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>Semana ${shift.week}</td>
+                    <td><span class="shift-assignment ${shift.class}">${shift.shift}</span></td>
+                    <td>${getShiftHours(shift.shift)}</td>
+                    <td>${shift.workingDays} días trabajo, ${shift.freeDays} días libres (${freeDaysText})</td>
+                    <td>${shift.hours}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getFreeDaysText(employeeId, freeDaysCount) {
+            const freeDays = getEmployeeFreeDays(employeeId, 7 - freeDaysCount);
+            const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            return freeDays.map(day => dayNames[day]).join(', ');
+        }
+
+        function getFreeDayDescription(day, employeeId) {
+            const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+            const dayOfWeek = date.getDay();
+            const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            return `Día Libre (${dayNames[dayOfWeek]})`;
+        }
+
+        function getShiftHours(shiftName) {
+            if (shiftName.includes('Central de Transporte - Mañana')) {
+                return '6.29 hrs/día (Lun-Dom) + 30 min colación';
+            } else if (shiftName.includes('Central de Transporte - Tarde')) {
+                return '6.29 hrs/día (Lun-Dom) + 30 min colación';
+            } else if (shiftName.includes('Despacho Central - Mañana')) {
+                return '7.33 hrs/día (Lun-Sáb) + 30 min colación';
+            } else if (shiftName.includes('Despacho Central - Tarde')) {
+                return '7.33 hrs/día (Lun-Sáb) + 30 min colación';
+            } else if (shiftName.includes('Turno Noche')) {
+                return '7.33 hrs/día (Dom-Sáb) + 30 min colación';
+            }
+            return '-';
+        }
+
+        // Funciones para manejo de fotos de perfil
+        function loadProfileData() {
+            if (!currentUser) return;
+            
+            // Cargar información del perfil
+            document.getElementById('profileName').textContent = currentUser.nombre || 'N/A';
+            document.getElementById('profileLastName').textContent = currentUser.apellido || 'N/A';
+            document.getElementById('profileEmail').textContent = currentUser.email || 'N/A';
+            document.getElementById('profilePhone').textContent = currentUser.telefono || 'N/A';
+            document.getElementById('profileRole').textContent = currentUser.rol || 'Empleado';
+            document.getElementById('profileHireDate').textContent = currentUser.fecha_contratacion || 'N/A';
+            
+            // Cargar tiempo de colación
+            loadBreakTime();
+            
+            // Cargar foto de perfil
+            loadProfilePhoto();
+            
+            // Configurar evento para subir foto
+            document.getElementById('photoInput').addEventListener('change', handlePhotoUpload);
+        }
+
+        function loadBreakTime() {
+            if (!currentUser) return;
+            
+            fetch(`/api/empleados/${currentUser.id}/colacion`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('profileBreakTime').textContent = `${data.tiempo_colacion} minutos`;
+                } else {
+                    document.getElementById('profileBreakTime').textContent = '30 minutos (por defecto)';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar tiempo de colación:', error);
+                document.getElementById('profileBreakTime').textContent = '30 minutos (por defecto)';
+            });
+        }
+
+        function loadProfilePhoto() {
+            fetch('/api/upload/profile-photo', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const profilePhoto = document.getElementById('profilePhoto');
+                const removeBtn = document.getElementById('removePhotoBtn');
+                
+                if (data.success && data.photoPath) {
+                    profilePhoto.innerHTML = `<img src="${data.photoPath}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    removeBtn.style.display = 'block';
+                } else {
+                    profilePhoto.innerHTML = '<i class="fas fa-user" style="font-size: 60px; color: #94A3B8;"></i>';
+                    removeBtn.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar foto de perfil:', error);
+            });
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validar tamaño del archivo (5MB máximo)
+            if (file.size > 5 * 1024 * 1024) {
+                showError('El archivo es demasiado grande. Máximo 5MB.');
+                return;
+            }
+            
+            // Validar tipo de archivo
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showError('Tipo de archivo no válido. Solo se permiten imágenes (JPEG, JPG, PNG, GIF, WEBP).');
+                return;
+            }
+            
+            // Crear FormData
+            const formData = new FormData();
+            formData.append('profilePhoto', file);
+            
+            // Subir archivo
+            fetch('/api/upload/profile-photo', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('Foto de perfil actualizada correctamente');
+                    loadProfilePhoto(); // Recargar la foto
+                } else {
+                    showError(data.message || 'Error al subir la foto');
+                }
+            })
+            .catch(error => {
+                console.error('Error al subir foto:', error);
+                showError('Error al subir la foto');
+            });
+            
+            // Limpiar el input
+            event.target.value = '';
+        }
+
+        function removeProfilePhoto() {
+            if (!confirm('¿Estás seguro de que quieres eliminar tu foto de perfil?')) {
+                return;
+            }
+            
+            fetch('/api/upload/profile-photo', {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('Foto de perfil eliminada correctamente');
+                    loadProfilePhoto(); // Recargar la foto
+                } else {
+                    showError(data.message || 'Error al eliminar la foto');
+                }
+            })
+            .catch(error => {
+                console.error('Error al eliminar foto:', error);
+                showError('Error al eliminar la foto');
+            });
+        }
+
+        // Funciones para manejo de liquidaciones de empleado
+        function loadEmployeePayrolls() {
+            if (!currentUser) return;
+            
+            fetch(`/api/liquidaciones/empleado/${currentUser.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayEmployeePayrolls(data.liquidaciones);
+                    populateEmployeeYearFilter(data.liquidaciones);
+                } else {
+                    showError('Error al cargar liquidaciones');
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar liquidaciones:', error);
+                showError('Error al cargar liquidaciones');
+            });
+        }
+
+        function displayEmployeePayrolls(payrolls) {
+            const tbody = document.getElementById('employeePayrollsTableBody');
+            tbody.innerHTML = '';
+
+            if (payrolls.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">No tienes liquidaciones disponibles</td></tr>';
+                return;
+            }
+
+            payrolls.forEach(payroll => {
+                const row = document.createElement('tr');
+                const monthNames = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                                  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                
+                // Determinar el ícono según el tipo de archivo
+                let fileIcon = 'fas fa-file';
+                let fileColor = '#6B7280';
+                if (payroll.nombre_archivo.toLowerCase().includes('.pdf')) {
+                    fileIcon = 'fas fa-file-pdf';
+                    fileColor = '#EF4444';
+                } else if (payroll.nombre_archivo.toLowerCase().includes('.doc') || payroll.nombre_archivo.toLowerCase().includes('.docx')) {
+                    fileIcon = 'fas fa-file-word';
+                    fileColor = '#2563EB';
+                } else if (payroll.nombre_archivo.toLowerCase().includes('.xls') || payroll.nombre_archivo.toLowerCase().includes('.xlsx')) {
+                    fileIcon = 'fas fa-file-excel';
+                    fileColor = '#16A34A';
+                }
+                
+                row.innerHTML = `
+                    <td>${monthNames[payroll.periodo_mes]} ${payroll.periodo_ano}</td>
+                    <td>
+                        <i class="${fileIcon}" style="color: ${fileColor}; margin-right: 5px;"></i>
+                        ${payroll.nombre_archivo}
+                    </td>
+                    <td>${formatFileSize(payroll.tamaño_archivo)}</td>
+                    <td>${formatDate(payroll.fecha_subida)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="downloadEmployeePayroll(${payroll.id})" title="Descargar">
+                            <i class="fas fa-download"></i> Descargar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function populateEmployeeYearFilter(payrolls) {
+            const yearFilterSelect = document.getElementById('employeePayrollYearFilter');
+            const years = [...new Set(payrolls.map(p => p.periodo_ano))].sort((a, b) => b - a);
+            
+            // Limpiar opciones existentes
+            yearFilterSelect.innerHTML = '<option value="">Todos los años</option>';
+            
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearFilterSelect.appendChild(option);
+            });
+        }
+
+        function filterEmployeePayrolls() {
+            // Esta función se implementará para filtrar las liquidaciones del empleado
+            loadEmployeePayrolls(); // Por ahora recargamos todas
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function downloadEmployeePayroll(payrollId) {
+            window.open(`/api/liquidaciones/download/${payrollId}`, '_blank');
+        }
+
+        function isHoliday(day, month, year) {
+            // Días feriados de Chile 2025
+            const holidays = [
+                { day: 1, month: 0 },   // 1 de Enero - Año Nuevo
+                { day: 19, month: 3 },  // 19 de Abril - Viernes Santo
+                { day: 20, month: 3 },  // 20 de Abril - Sábado Santo
+                { day: 1, month: 4 },   // 1 de Mayo - Día del Trabajador
+                { day: 21, month: 4 },  // 21 de Mayo - Día de las Glorias Navales
+                { day: 18, month: 8 },  // 18 de Septiembre - Fiestas Patrias
+                { day: 19, month: 8 },  // 19 de Septiembre - Glorias del Ejército
+                { day: 12, month: 9 },  // 12 de Octubre - Encuentro de Dos Mundos
+                { day: 1, month: 10 },  // 1 de Noviembre - Día de Todos los Santos
+                { day: 8, month: 11 },  // 8 de Diciembre - Inmaculada Concepción
+                { day: 25, month: 11 }  // 25 de Diciembre - Navidad
+            ];
+            
+            return holidays.some(holiday => 
+                holiday.day === day && holiday.month === month
+            );
+        }
+    </script>
+</body>
+</html>

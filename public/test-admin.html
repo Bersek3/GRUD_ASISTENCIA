@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Functions</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .result { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Test de Funciones de Administración</h1>
+    
+    <div class="test-section">
+        <h2>1. Test de Login</h2>
+        <button onclick="testLogin()">Probar Login</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test de Obtener Empleados</h2>
+        <button onclick="testGetEmployees()">Obtener Empleados</button>
+        <div id="employeesResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test de Agregar Empleado</h2>
+        <button onclick="testAddEmployee()">Agregar Empleado de Prueba</button>
+        <div id="addEmployeeResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test de Logout</h2>
+        <button onclick="testLogout()">Probar Logout</button>
+        <div id="logoutResult" class="result"></div>
+    </div>
+
+    <script>
+        let token = null;
+
+        async function testLogin() {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@sistema.com',
+                        password: 'admin123'
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('loginResult').innerHTML = 
+                    `<strong>Resultado:</strong> ${JSON.stringify(data, null, 2)}`;
+                
+                if (data.success) {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = 
+                    `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function testGetEmployees() {
+            if (!token) {
+                document.getElementById('employeesResult').innerHTML = 
+                    '<strong>Error:</strong> Primero debes hacer login';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/empleados', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+                document.getElementById('employeesResult').innerHTML = 
+                    `<strong>Resultado:</strong> ${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('employeesResult').innerHTML = 
+                    `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function testAddEmployee() {
+            if (!token) {
+                document.getElementById('addEmployeeResult').innerHTML = 
+                    '<strong>Error:</strong> Primero debes hacer login';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/empleados', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        nombre: 'Test',
+                        apellido: 'Usuario',
+                        email: 'test@empresa.com',
+                        telefono: '+1234567890',
+                        rol_id: 3,
+                        password: 'test123'
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('addEmployeeResult').innerHTML = 
+                    `<strong>Resultado:</strong> ${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('addEmployeeResult').innerHTML = 
+                    `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+
+        function testLogout() {
+            localStorage.removeItem('token');
+            token = null;
+            document.getElementById('logoutResult').innerHTML = 
+                '<strong>Resultado:</strong> Logout exitoso - Token eliminado';
+        }
+    </script>
+</body>
+</html>
