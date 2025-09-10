@@ -40,6 +40,56 @@ router.get('/', authenticateToken, (req, res) => {
     );
 });
 
+// Obtener todos los horarios de empleados (para el calendario)
+router.get('/empleados-calendario', authenticateToken, (req, res) => {
+    const db = new sqlite3.Database(dbPath);
+    
+    // Obtener empleados activos con sus horarios asignados
+    db.all(
+        `SELECT 
+            e.id as empleado_id,
+            e.nombre,
+            e.apellido,
+            r.nombre as rol,
+            h.id as horario_id,
+            h.nombre as horario_nombre,
+            h.hora_entrada,
+            h.hora_salida,
+            h.dias_semana as dias_trabajo,
+            eh.fecha_inicio,
+            eh.fecha_fin,
+            eh.activo as estado_asignacion,
+            CASE 
+                WHEN eh.activo = 1 THEN 'ACTIVO'
+                ELSE 'INACTIVO'
+            END as estado
+         FROM empleados e
+         LEFT JOIN empleado_horarios eh ON e.id = eh.empleado_id AND eh.activo = 1
+         LEFT JOIN horarios h ON eh.horario_id = h.id
+         LEFT JOIN roles r ON e.rol_id = r.id
+         WHERE e.activo = 1
+         ORDER BY e.id, eh.fecha_inicio DESC`,
+        (err, horarios) => {
+            if (err) {
+                db.close();
+                return res.status(500).json({
+                    success: false,
+                    message: 'Error al obtener horarios de empleados'
+                });
+            }
+
+            // Filtrar solo empleados que tienen horarios asignados
+            const horariosActivos = horarios.filter(h => h.horario_id !== null);
+            
+            db.close();
+            res.json({
+                success: true,
+                horarios: horariosActivos
+            });
+        }
+    );
+});
+
 // Obtener horario por ID
 router.get('/:id', authenticateToken, (req, res) => {
     const { id } = req.params;
@@ -148,91 +198,6 @@ router.post('/', authenticateToken, requireAdmin, (req, res) => {
     );
 });
 
-// Actualizar horario (solo admin)
-router.put('/:id', authenticateToken, requireAdmin, (req, res) => {
-    const { id } = req.params;
-    const { nombre, hora_entrada, hora_salida, dias_semana, descripcion, activo } = req.body;
-
-    const db = new sqlite3.Database(dbPath);
-
-    // Verificar si el horario existe
-    db.get(
-        'SELECT * FROM horarios WHERE id = ?',
-        [id],
-        (err, horarioExistente) => {
-            if (err) {
-                db.close();
-                return res.status(500).json({
-                    success: false,
-                    message: 'Error al verificar horario'
-                });
-            }
-
-            if (!horarioExistente) {
-                db.close();
-                return res.status(404).json({
-                    success: false,
-                    message: 'Horario no encontrado'
-                });
-            }
-
-            // Validar días de la semana si se proporcionan
-            if (dias_semana) {
-                const diasArray = dias_semana.split(',').map(d => parseInt(d.trim()));
-                if (diasArray.some(d => d < 0 || d > 6)) {
-                    db.close();
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Los días de la semana deben ser números del 0 al 6 (0=Domingo, 6=Sábado)'
-                    });
-                }
-            }
-
-            // Actualizar horario
-            db.run(
-                'UPDATE horarios SET nombre = ?, hora_entrada = ?, hora_salida = ?, dias_semana = ?, descripcion = ?, activo = ? WHERE id = ?',
-                [nombre, hora_entrada, hora_salida, dias_semana, descripcion, activo, id],
-                function(err) {
-                    if (err) {
-                        db.close();
-                        if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-                            return res.status(400).json({
-                                success: false,
-                                message: 'Ya existe un horario con ese nombre'
-                            });
-                        }
-                        return res.status(500).json({
-                            success: false,
-                            message: 'Error al actualizar horario'
-                        });
-                    }
-
-                    // Obtener horario actualizado
-                    db.get(
-                        'SELECT * FROM horarios WHERE id = ?',
-                        [id],
-                        (err, horario) => {
-                            db.close();
-                            
-                            if (err) {
-                                return res.status(500).json({
-                                    success: false,
-                                    message: 'Horario actualizado pero error al obtener datos'
-                                });
-                            }
-
-                            res.json({
-                                success: true,
-                                message: 'Horario actualizado exitosamente',
-                                data: horario
-                            });
-                        }
-                    );
-                }
-            );
-        }
-    );
-});
 
 // Eliminar horario (solo admin)
 router.delete('/:id', authenticateToken, requireAdmin, (req, res) => {
@@ -429,15 +394,93 @@ router.get('/empleado/:empleadoId', authenticateToken, (req, res) => {
     );
 });
 
+// Función para generar horarios con rotación equitativa
+function generateRotationSchedules(empleados) {
+    const horarios = [];
+    const fechaActual = new Date();
+    const semanaActual = getWeekNumber(fechaActual);
+    
+    // Definir secuencia de rotación
+    const secuenciaRotacion = [
+        { rol: 'centralista', turno: 'CENTRALISTA_MANANA', horario: 'Centralista Turno Mañana', dias: '1,2,3,4,5,6,0', entrada: '07:00', salida: '16:00' },
+        { rol: 'centralista', turno: 'CENTRALISTA_TARDE', horario: 'Centralista Turno Tarde', dias: '1,2,3,4,5,6', entrada: '14:30', salida: '23:30' },
+        { rol: 'despachador', turno: 'DESPACHADOR_MANANA', horario: 'Despachador Turno Mañana', dias: '1,2,3,4,5,6', entrada: '07:00', salida: '15:00' },
+        { rol: 'despachador', turno: 'DESPACHADOR_TARDE', horario: 'Despachador Turno Tarde', dias: '1,2,3,4,5,6', entrada: '15:00', salida: '23:00' },
+        { rol: 'turno_noche', turno: 'TURNO_NOCHE', horario: 'Turno Noche', dias: '0,1,2,3,4,5,6', entrada: '23:30', salida: '07:00' }
+    ];
+    
+    empleados.forEach((empleado, index) => {
+        // Calcular posición en la rotación basada en la semana actual
+        const posicionRotacion = (semanaActual + index) % secuenciaRotacion.length;
+        const asignacionActual = secuenciaRotacion[posicionRotacion];
+        
+        // Verificar si es empleado part-time
+        if (empleado.rol === 'part time') {
+            // Part-time solo trabaja fines de semana
+            horarios.push({
+                empleado_id: empleado.id,
+                nombre: empleado.nombre,
+                apellido: empleado.apellido,
+                rol: empleado.rol,
+                horario_id: 6, // Part Time Sábado Noche
+                horario_nombre: 'Part Time Sábado Noche',
+                hora_entrada: '23:30',
+                hora_salida: '07:00',
+                dias_trabajo: '6', // Solo Sábado
+                estado: 'ACTIVO',
+                turno: 'PART_TIME_SABADO_NOCHE'
+            });
+            
+            horarios.push({
+                empleado_id: empleado.id,
+                nombre: empleado.nombre,
+                apellido: empleado.apellido,
+                rol: empleado.rol,
+                horario_id: 7, // Part Time Domingo Tarde
+                horario_nombre: 'Part Time Domingo Tarde',
+                hora_entrada: '15:00',
+                hora_salida: '23:00',
+                dias_trabajo: '0', // Solo Domingo
+                estado: 'ACTIVO',
+                turno: 'PART_TIME_DOMINGO_TARDE'
+            });
+        } else {
+            // Empleados regulares con rotación
+            horarios.push({
+                empleado_id: empleado.id,
+                nombre: empleado.nombre,
+                apellido: empleado.apellido,
+                rol: empleado.rol,
+                horario_id: posicionRotacion + 1,
+                horario_nombre: asignacionActual.horario,
+                hora_entrada: asignacionActual.entrada,
+                hora_salida: asignacionActual.salida,
+                dias_trabajo: asignacionActual.dias,
+                estado: 'ACTIVO',
+                turno: asignacionActual.turno
+            });
+        }
+    });
+    
+    return horarios;
+}
+
+// Función para obtener el número de semana del año
+function getWeekNumber(date) {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+}
+
 // Actualizar horario
 router.put('/:id', authenticateToken, requireAdmin, (req, res) => {
     const { id } = req.params;
     const { nombre, hora_entrada, hora_salida, dias_semana, descripcion, activo } = req.body;
 
-    if (!nombre || !hora_entrada || !hora_salida || !dias_semana) {
+    if (!nombre || !hora_entrada || !hora_salida) {
         return res.status(400).json({
             success: false,
-            message: 'Nombre, hora de entrada, hora de salida y días de la semana son requeridos'
+            message: 'Nombre, hora de entrada y hora de salida son requeridos'
         });
     }
 

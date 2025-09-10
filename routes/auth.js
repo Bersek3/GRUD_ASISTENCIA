@@ -28,7 +28,7 @@ const authenticateToken = (req, res, next) => {
 
 // Middleware para verificar permisos de administrador
 const requireAdmin = (req, res, next) => {
-    if (req.user.rol !== 'Administrador') {
+    if (req.user.permisos !== 'admin') {
         return res.status(403).json({ success: false, message: 'Se requieren permisos de administrador' });
     }
     next();

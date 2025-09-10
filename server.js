@@ -17,6 +17,7 @@ const notificacionesRoutes = require('./routes/notificaciones');
 const diasLibresRoutes = require('./routes/dias-libres');
 const uploadRoutes = require('./routes/upload');
 const liquidacionesRoutes = require('./routes/liquidaciones');
+const rotacionRoutes = require('./routes/rotacion');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -64,6 +65,7 @@ app.use('/api/notificaciones', notificacionesRoutes);
 app.use('/api/dias-libres', diasLibresRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/liquidaciones', liquidacionesRoutes);
+app.use('/api/rotacion', rotacionRoutes);
 
 // Ruta principal - servir la aplicación web
 app.get('/', (req, res) => {

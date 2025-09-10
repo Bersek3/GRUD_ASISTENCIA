@@ -458,6 +458,50 @@
             background-color: #607D8B;
         }
 
+        /* Estilos para las nuevas clases de turnos */
+        .turno-manana {
+            background-color: #2196F3; /* Azul para turno mañana */
+        }
+
+        .turno-tarde {
+            background-color: #FF9800; /* Naranja para turno tarde */
+        }
+
+        .turno-general {
+            background-color: #9C27B0; /* Morado para turnos generales */
+        }
+
+        .no-schedule {
+            background-color: #9CA3AF; /* Gris para sin horario */
+        }
+        
+        .free-day {
+            background-color: #e9ecef !important;
+            color: #6c757d !important;
+            border: 1px solid #dee2e6 !important;
+            font-style: italic;
+        }
+        
+        /* Estilos para PART TIME */
+        .part-time-night {
+            background-color: #dc3545 !important; /* Rojo para PART TIME noche */
+            color: white !important;
+        }
+        
+        .part-time-tarde {
+            background-color: #dc3545 !important; /* Rojo para PART TIME tarde */
+            color: white !important;
+        }
+        
+        /* Colores específicos por trabajador */
+        .worker-ivan { background-color: #6f42c1 !important; color: white !important; } /* Morado */
+        .worker-jose { background-color: #17a2b8 !important; color: white !important; } /* Celeste */
+        .worker-marcos { background-color: #343a40 !important; color: white !important; } /* Negro */
+        .worker-matias-v { background-color: #fd7e14 !important; color: white !important; } /* Naranja */
+        .worker-angelica { background-color: #28a745 !important; color: white !important; } /* Verde */
+        .worker-matias-i { background-color: #ffc107 !important; color: black !important; } /* Amarillo */
+        .worker-part-time { background-color: #dc3545 !important; color: white !important; } /* Rojo */
+
         .shift-assignment.holiday {
             background-color: #FF0000;
             font-weight: bold;
@@ -1252,54 +1296,286 @@
         // Funciones para manejar turnos del empleado
         async function loadEmployeeShifts() {
             try {
-                // Generar turnos del empleado basado en su ID
-                generateEmployeeShifts();
+                // Obtener horarios reales del empleado desde la API
+                await loadRealEmployeeSchedule();
                 generateCalendar();
                 generateShiftsSummary();
             } catch (error) {
+                console.error('Error al cargar turnos del empleado:', error);
                 showError('Error al cargar turnos del empleado');
             }
         }
 
-        function generateEmployeeShifts() {
+        async function loadRealEmployeeSchedule() {
             if (!currentUser) return;
             
             const employeeId = currentUser.id;
-            console.log('Generando turnos para empleado ID:', employeeId, 'Nombre:', currentUser.nombre, currentUser.apellido);
+            console.log('Cargando horarios para:', currentUser.nombre, currentUser.apellido);
+            
+            try {
+                const response = await fetch(`/api/horarios/empleado/${employeeId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    // Obtener el horario activo más reciente
+                    const activeSchedule = data.data.find(h => h.asignacion_activa === 1) || data.data[0];
+                    
+                    console.log('Horario asignado:', activeSchedule.nombre);
+                    
+                    // Generar turnos basados en el horario real
+                    generateShiftsFromRealSchedule(activeSchedule);
+                } else {
+                    console.log('No se encontraron horarios para el empleado');
+                    // Si no hay horarios, mostrar mensaje
+                    employeeShifts = [{
+                        week: 1,
+                        weekStart: new Date().toISOString().split('T')[0],
+                        shift: 'Sin horario asignado',
+                        class: 'no-schedule',
+                        days: 'Contacta al administrador para asignar un horario',
+                        hours: '0 hrs',
+                        workingDays: 0,
+                        freeDays: 7
+                    }];
+                }
+            } catch (error) {
+                console.error('Error al obtener horarios del empleado:', error);
+                throw error;
+            }
+        }
+
+        function generateShiftsFromRealSchedule(schedule) {
             const startDate = new Date();
             employeeShifts = [];
             
-            // Generar turnos para 12 semanas
+            // Obtener la semana actual del año para calcular la rotación
+            const currentWeek = getCurrentWeek();
+            
+            console.log('=== DEBUGGING MATÍAS IGOR ===');
+            console.log('Horario original:', schedule);
+            console.log('Semana actual del año:', currentWeek);
+            console.log('Días de semana del horario:', schedule.dias_semana);
+            
+            // Generar turnos para 12 semanas con rotación real
             for (let week = 0; week < 12; week++) {
                 const weekStart = new Date(startDate);
                 weekStart.setDate(startDate.getDate() + (week * 7));
                 
-                // Determinar qué turno tiene este empleado esta semana
-                let shiftInfo = null;
+                // Calcular qué turno tiene este empleado esta semana
+                const weekNumber = currentWeek + week;
+                const rotationInfo = calculateRotationForWeek(schedule, weekNumber);
                 
-                // Sistema de rotación: Turno Noche -> Despacho Tarde -> Central Transporte Mañana -> Despacho Mañana -> Central Transporte Tarde -> Turno Noche
-                const rotationWeek = week % 5; // Rotación cada 5 semanas
+                const shiftInfo = {
+                    week: week + 1,
+                    weekStart: weekStart.toISOString().split('T')[0],
+                    shift: rotationInfo.shift,
+                    class: rotationInfo.class,
+                    days: rotationInfo.days,
+                    hours: rotationInfo.hours,
+                    workingDays: rotationInfo.workingDays,
+                    freeDays: rotationInfo.freeDays,
+                    workingDaysArray: rotationInfo.workingDaysArray
+                };
                 
-                if (employeeId === 8) { // IVAN VIDAL
-                    shiftInfo = getShiftForRotation(rotationWeek, weekStart, 'IVAN VIDAL');
-                } else if (employeeId === 9) { // JOSE PAILLACAR
-                    shiftInfo = getShiftForRotation((rotationWeek + 1) % 5, weekStart, 'JOSE PAILLACAR');
-                } else if (employeeId === 10) { // MARCOS PAILLACAR
-                    shiftInfo = getShiftForRotation((rotationWeek + 2) % 5, weekStart, 'MARCOS PAILLACAR');
-                } else if (employeeId === 11) { // MATIAS VILLANUEVA
-                    shiftInfo = getShiftForRotation((rotationWeek + 3) % 5, weekStart, 'MATIAS VILLANUEVA');
-                } else if (employeeId === 12) { // ANGELICA CHAVEZ
-                    shiftInfo = getShiftForRotation((rotationWeek + 4) % 5, weekStart, 'ANGELICA CHAVEZ');
-                } else if (employeeId === 13) { // MATIAS IGOR
-                    shiftInfo = getShiftForRotation((rotationWeek + 5) % 5, weekStart, 'MATIAS IGOR');
-                }
+                employeeShifts.push(shiftInfo);
                 
-                if (shiftInfo) {
-                    shiftInfo.week = week + 1; // Ajustar número de semana
-                    console.log('Semana', week + 1, 'Turno asignado:', shiftInfo.shift);
-                    employeeShifts.push(shiftInfo);
+                // Log detallado para las primeras 4 semanas
+                if (week < 4) {
+                    console.log(`Semana ${week + 1}: ${rotationInfo.shift} (${rotationInfo.class})`);
+                    console.log(`  -> Días de trabajo: [${rotationInfo.workingDaysArray.join(', ')}]`);
+                    console.log(`  -> Semana del año: ${weekNumber} (${weekNumber % 8})`);
                 }
             }
+            
+            console.log('Turnos con rotación generados correctamente para 12 semanas');
+            console.log('Total turnos generados:', employeeShifts.length);
+        }
+
+        function calculateRotationForWeek(originalSchedule, weekNumber) {
+            const scheduleName = originalSchedule.nombre;
+            let rotationInfo = {};
+            
+            // Obtener los días de trabajo del horario original
+            const originalWorkingDays = originalSchedule.dias_semana ? 
+                originalSchedule.dias_semana.split(',').map(d => parseInt(d)) : [1, 2, 3, 4, 5, 6];
+            
+            // Rotación con secuencia obligatoria del turno noche
+            // Patrón: Centralista Mañana → Centralista Tarde → Despachador Mañana → Despachador Tarde → Turno Noche → Despachador Tarde (obligatorio) → Despachador Mañana → Centralista Tarde
+            const rotationWeek = weekNumber % 8;
+            
+            switch (rotationWeek) {
+                case 0: // Centralista Turno Mañana (4 días + 2 descanso)
+                    rotationInfo = {
+                        shift: 'Centralista Turno Mañana',
+                        class: 'turno-manana',
+                        days: '4 días trabajo + 2 descanso (44 hrs)',
+                        hours: '44.0 hrs',
+                        workingDays: 4,
+                        freeDays: 2,
+                        workingDaysArray: originalWorkingDays.slice(0, 4) // Usar días reales del horario
+                    };
+                    break;
+                case 1: // Centralista Turno Tarde (4 días + 2 descanso)
+                    rotationInfo = {
+                        shift: 'Centralista Turno Tarde',
+                        class: 'turno-tarde',
+                        days: '4 días trabajo + 2 descanso (44 hrs)',
+                        hours: '44.0 hrs',
+                        workingDays: 4,
+                        freeDays: 2,
+                        workingDaysArray: originalWorkingDays.slice(0, 4) // Usar días reales del horario
+                    };
+                    break;
+                case 2: // Despachador Turno Mañana (4 días + 2 descanso)
+                    rotationInfo = {
+                        shift: 'Despachador Turno Mañana',
+                        class: 'turno-manana',
+                        days: '4 días trabajo + 2 descanso (44 hrs)',
+                        hours: '44.0 hrs',
+                        workingDays: 4,
+                        freeDays: 2,
+                        workingDaysArray: originalWorkingDays.slice(0, 4) // Usar días reales del horario
+                    };
+                    break;
+                case 3: // Despachador Turno Tarde (4 días + 2 descanso)
+                    rotationInfo = {
+                        shift: 'Despachador Turno Tarde',
+                        class: 'turno-tarde',
+                        days: '4 días trabajo + 2 descanso (44 hrs)',
+                        hours: '44.0 hrs',
+                        workingDays: 4,
+                        freeDays: 2,
+                        workingDaysArray: originalWorkingDays.slice(0, 4) // Usar días reales del horario
+                    };
+                    break;
+                case 4: // Turno Noche (6 días + 1 descanso) - OBLIGATORIO
+                    rotationInfo = {
+                        shift: 'Turno Noche',
+                        class: 'turno-noche',
+                        days: 'Domingo a Viernes (6 días trabajo, 1 día libre)',
+                        hours: '44.0 hrs',
+                        workingDays: 6,
+                        freeDays: 1,
+                        workingDaysArray: [0, 1, 2, 3, 4, 5] // Dom-Vie para turno noche (NO incluye sábado)
+                    };
+                    break;
+                case 5: // Despachador Turno Tarde (4 días + 2 descanso) - OBLIGATORIO después del turno noche
+                    rotationInfo = {
+                        shift: 'Despachador Turno Tarde',
+                        class: 'turno-tarde',
+                        days: '4 días trabajo + 2 descanso (44 hrs) - OBLIGATORIO después de turno noche',
+                        hours: '44.0 hrs',
+                        workingDays: 4,
+                        freeDays: 2,
+                        workingDaysArray: originalWorkingDays.slice(0, 4) // Usar días reales del horario
+                    };
+                    break;
+                case 6: // Despachador Turno Mañana (4 días + 2 descanso)
+                    rotationInfo = {
+                        shift: 'Despachador Turno Mañana',
+                        class: 'turno-manana',
+                        days: '4 días trabajo + 2 descanso (44 hrs)',
+                        hours: '44.0 hrs',
+                        workingDays: 4,
+                        freeDays: 2,
+                        workingDaysArray: originalWorkingDays.slice(0, 4) // Usar días reales del horario
+                    };
+                    break;
+                case 7: // Centralista Turno Tarde (4 días + 2 descanso)
+                    rotationInfo = {
+                        shift: 'Centralista Turno Tarde',
+                        class: 'turno-tarde',
+                        days: '4 días trabajo + 2 descanso (44 hrs)',
+                        hours: '44.0 hrs',
+                        workingDays: 4,
+                        freeDays: 2,
+                        workingDaysArray: originalWorkingDays.slice(0, 4) // Usar días reales del horario
+                    };
+                    break;
+            }
+            
+            return rotationInfo;
+        }
+        
+        // Función para obtener el color del trabajador según su nombre
+        function getWorkerColor(workerName) {
+            const colors = {
+                'IVAN VIDAL': 'purple',
+                'JOSE PAILLACAR': 'lightblue',
+                'MARCOS PAILLACAR': 'black',
+                'MATIAS VILLANUEVA': 'orange',
+                'ANGELICA CHAVEZ': 'green',
+                'MATIAS IGOR': 'yellow',
+                'PART TIME': 'red'
+            };
+            return colors[workerName.toUpperCase()] || 'gray';
+        }
+        
+        // Función para manejar el horario especial del PART TIME
+        function getPartTimeSchedule(dayOfWeek) {
+            if (dayOfWeek === 6) { // Sábado
+                return {
+                    shift: 'PART TIME - Turno Noche',
+                    class: 'part-time-night',
+                    hours: '23:30 - 07:00',
+                    workingDays: [6] // Solo sábado
+                };
+            } else if (dayOfWeek === 0) { // Domingo
+                return {
+                    shift: 'PART TIME - Central Tarde',
+                    class: 'part-time-tarde',
+                    hours: '15:00 - 23:00',
+                    workingDays: [0] // Solo domingo
+                };
+            }
+            return null; // No trabaja otros días
+        }
+
+        function getCurrentWeek() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 1);
+            const diff = now - start;
+            const oneWeek = 1000 * 60 * 60 * 24 * 7;
+            return Math.floor(diff / oneWeek);
+        }
+
+        function getShiftClass(scheduleName) {
+            if (scheduleName.includes('Noche')) return 'turno-noche';
+            if (scheduleName.includes('Mañana')) return 'turno-manana';
+            if (scheduleName.includes('Tarde')) return 'turno-tarde';
+            return 'turno-general';
+        }
+
+        function getWorkingDaysDescription(diasSemana) {
+            const dias = diasSemana.split(',').map(d => parseInt(d));
+            const diasNombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const diasTrabajo = dias.map(d => diasNombres[d]).join(', ');
+            return `${diasTrabajo} (${dias.length} días trabajo, ${7 - dias.length} días libres)`;
+        }
+
+        function getWorkingDaysCount(diasSemana) {
+            return diasSemana.split(',').length;
+        }
+
+        function calculateScheduleHours(schedule) {
+            const entrada = new Date(`2000-01-01T${schedule.hora_entrada}:00`);
+            const salida = new Date(`2000-01-01T${schedule.hora_salida}:00`);
+            
+            // Manejar turno noche que cruza medianoche
+            if (salida < entrada) {
+                salida.setDate(salida.getDate() + 1);
+            }
+            
+            const diffMs = salida - entrada;
+            const diffHours = diffMs / (1000 * 60 * 60);
+            const workingDays = getWorkingDaysCount(schedule.dias_semana);
+            
+            return `${(diffHours * workingDays).toFixed(1)} hrs`;
         }
 
         function getShiftForRotation(rotationIndex, weekStart, employeeName) {
@@ -1546,110 +1822,116 @@
         }
 
         function getShiftForDay(day, isOtherMonth) {
-            if (isOtherMonth || !currentUser) return '';
+            if (isOtherMonth || !currentUser || !employeeShifts || employeeShifts.length === 0) {
+                return '';
+            }
             
             const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
             const dayOfWeek = date.getDay();
-            const weekNumber = getWeekNumber(date);
             
             // Verificar si es día feriado primero
             if (isHoliday(day, currentDate.getMonth(), currentDate.getFullYear())) {
                 return `<div class="shift-assignment holiday">FERIADO</div>`;
             }
             
-            // Determinar si este empleado trabaja este día
-            let shiftInfo = null;
-            
-            // Sistema de rotación: Turno Noche -> Despacho Tarde -> Central Transporte Mañana -> Despacho Mañana -> Central Transporte Tarde -> Turno Noche
-            const rotationWeek = weekNumber % 5; // Rotación cada 5 semanas
-            let rotationIndex = 0;
-            
-            if (currentUser.id === 8) { // IVAN VIDAL
-                rotationIndex = rotationWeek;
-            } else if (currentUser.id === 9) { // JOSE PAILLACAR
-                rotationIndex = (rotationWeek + 1) % 5;
-            } else if (currentUser.id === 10) { // MARCOS PAILLACAR
-                rotationIndex = (rotationWeek + 2) % 5;
-            } else if (currentUser.id === 11) { // MATIAS VILLANUEVA
-                rotationIndex = (rotationWeek + 3) % 5;
-            } else if (currentUser.id === 12) { // ANGELICA CHAVEZ
-                rotationIndex = (rotationWeek + 4) % 5;
-            } else if (currentUser.id === 13) { // MATIAS IGOR
-                rotationIndex = (rotationWeek + 5) % 5;
-            }
-            
-            // Determinar el turno y verificar si trabaja este día
-            let shiftType = '';
-            let shiftIndex = 0;
-            
-            switch (rotationIndex) {
-                case 0: // Turno Noche
-                    shiftType = 'noche';
-                    shiftIndex = 0;
-                    break;
-                case 1: // Despacho Tarde
-                    shiftType = 'despacho';
-                    shiftIndex = 1;
-                    break;
-                case 2: // Central Transporte Mañana
-                    shiftType = 'central';
-                    shiftIndex = 0;
-                    break;
-                case 3: // Despacho Mañana
-                    shiftType = 'despacho';
-                    shiftIndex = 0;
-                    break;
-                case 4: // Central Transporte Tarde
-                    shiftType = 'central';
-                    shiftIndex = 1;
-                    break;
-            }
-            
-            const hoursInfo = calculateWeeklyHours(shiftType, shiftIndex);
-            if (isWorkingDay(dayOfWeek, hoursInfo.workingDays, currentUser.id, shiftType)) {
-                // Obtener información del turno
-                let shiftName = '';
-                let shiftClass = '';
-                
-                // Obtener el nombre del empleado actual
-                const employeeName = currentUser.nombre + ' ' + currentUser.apellido;
-                console.log('Empleado actual:', currentUser);
-                console.log('Nombre del empleado:', employeeName);
-                
-                switch (rotationIndex) {
-                    case 0: // Turno Noche
-                        shiftName = `Turno Noche`;
-                        shiftClass = 'turno-noche';
-                        break;
-                    case 1: // Despacho Tarde
-                        shiftName = `Despacho Central - Tarde`;
-                        shiftClass = 'despacho-central-tarde';
-                        break;
-                    case 2: // Central Transporte Mañana
-                        shiftName = `Central Transporte - Mañana`;
-                        shiftClass = 'central-transporte-manana';
-                        break;
-                    case 3: // Despacho Mañana
-                        shiftName = `Despacho Central - Mañana`;
-                        shiftClass = 'despacho-central-manana';
-                        break;
-                    case 4: // Central Transporte Tarde
-                        shiftName = `Central Transporte - Tarde`;
-                        shiftClass = 'central-transporte-tarde';
-                        break;
+            // Manejo especial para PART TIME
+            if (currentUser.nombre && currentUser.nombre.toUpperCase().includes('PART TIME')) {
+                const partTimeSchedule = getPartTimeSchedule(dayOfWeek);
+                if (partTimeSchedule) {
+                    return `<div class="shift-assignment ${partTimeSchedule.class}">${partTimeSchedule.shift}</div>`;
+                } else {
+                    return `<div class="shift-assignment free-day">LIBRE</div>`;
                 }
-                
-                shiftInfo = {
-                    name: shiftName,
-                    class: shiftClass
-                };
             }
             
-            if (shiftInfo) {
-                return `<div class="shift-assignment ${shiftInfo.class}">${shiftInfo.name}</div>`;
+            // Calcular qué semana del mes es este día correctamente
+            const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const firstDayOfWeek = firstDayOfMonth.getDay(); // 0=domingo, 1=lunes, etc.
+            
+            // Calcular el número de semana del mes (0-4)
+            const weekOfMonth = Math.floor((day + firstDayOfWeek - 1) / 7);
+            const shiftIndex = Math.min(weekOfMonth, employeeShifts.length - 1);
+            const currentShift = employeeShifts[shiftIndex];
+            
+            console.log(`Día ${day}: semana del mes ${weekOfMonth}, índice ${shiftIndex}, turno: ${currentShift ? currentShift.shift : 'N/A'}`);
+            
+            if (!currentShift || currentShift.shift === 'Sin horario asignado') {
+                return '';
             }
+            
+            // Manejo especial para transición del turno noche
+            if (currentShift.shift === 'Turno Noche' && dayOfWeek === 1) { // Lunes
+                // El lunes después del turno noche, entra a las 15:00 como despachador tarde
+                const nextShift = employeeShifts[shiftIndex + 1];
+                if (nextShift && nextShift.shift.includes('Despachador Turno Tarde')) {
+                    const workerColorClass = getWorkerColorClass(currentUser.nombre);
+                    return `<div class="shift-assignment ${nextShift.class} ${workerColorClass}">TARDE</div>`;
+                }
+            }
+            
+            // Manejo especial para el sábado después del turno noche
+            if (currentShift.shift === 'Turno Noche' && dayOfWeek === 6) { // Sábado
+                // El sábado después del turno noche es día libre
+                return `<div class="shift-assignment free-day">LIBRE</div>`;
+            }
+            
+            // Verificar si el empleado trabaja este día según su horario de esa semana
+            const workingDays = getWorkingDaysFromSchedule(currentShift);
+            
+            if (workingDays.includes(dayOfWeek)) {
+                const shiftDisplay = getShiftDisplayName(currentShift.shift);
+                // Agregar clase de color del trabajador
+                const workerColorClass = getWorkerColorClass(currentUser.nombre);
+                return `<div class="shift-assignment ${currentShift.class} ${workerColorClass}">${shiftDisplay}</div>`;
+            } else {
+                // Si no está en los días de trabajo, es día libre
+                return `<div class="shift-assignment free-day">LIBRE</div>`;
+            }
+        }
+        
+        // Función para obtener la clase CSS del color del trabajador
+        function getWorkerColorClass(workerName) {
+            if (!workerName) return '';
+            
+            const name = workerName.toUpperCase();
+            if (name.includes('IVAN')) return 'worker-ivan';
+            if (name.includes('JOSE')) return 'worker-jose';
+            if (name.includes('MARCOS')) return 'worker-marcos';
+            if (name.includes('MATIAS') && name.includes('VILLANUEVA')) return 'worker-matias-v';
+            if (name.includes('ANGELICA')) return 'worker-angelica';
+            if (name.includes('MATIAS') && name.includes('IGOR')) return 'worker-matias-i';
+            if (name.includes('PART TIME')) return 'worker-part-time';
             
             return '';
+        }
+
+        function getWorkingDaysFromSchedule(shift) {
+            // Usar la información real de días de trabajo de la API
+            if (shift.workingDaysArray) {
+                return shift.workingDaysArray;
+            }
+            
+            // Fallback: usar lógica basada en el nombre del turno
+            if (shift.shift.includes('Noche')) {
+                return [0, 1, 2, 3, 4, 5, 6]; // Todos los días
+            } else if (shift.shift.includes('Centralista')) {
+                return [1, 2, 3, 4, 5, 6, 0]; // Lun-Dom (5 días trabajo, 2 descanso)
+            } else if (shift.shift.includes('Despachador')) {
+                return [1, 2, 3, 4, 5, 6]; // Lun-Sáb (6 días trabajo, 1 descanso)
+            }
+            return [];
+        }
+
+        function getShiftDisplayName(shiftName) {
+            if (shiftName.includes('Turno Noche')) return 'NOCHE';
+            if (shiftName.includes('Centralista Turno Mañana')) return 'MAÑANA';
+            if (shiftName.includes('Centralista Turno Tarde')) return 'TARDE';
+            if (shiftName.includes('Despachador Turno Mañana')) return 'MAÑANA';
+            if (shiftName.includes('Despachador Turno Tarde')) return 'TARDE';
+            if (shiftName.includes('Mañana')) return 'MAÑANA';
+            if (shiftName.includes('Tarde')) return 'TARDE';
+            if (shiftName.includes('Noche')) return 'NOCHE';
+            return shiftName.toUpperCase();
         }
 
         function getWeekNumber(date) {
